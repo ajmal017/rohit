@@ -357,21 +357,25 @@ def buy_all_rule_classifier(regression_data, regressionResult, buyIndiaAvg, ws_b
     return False
 
 def buy_year_high(regression_data, regressionResult, ws_buyYearHigh):
-    if(float(regression_data['forecast_day_VOL_change']) > 70
-       and regression_data['PCT_day_change_pre'] > -0.5
+    if(float(regression_data['forecast_day_VOL_change']) > 50
+       and(regression_data['PCT_day_change_pre'] > 0 
+           or (regression_data['volume'] > regression_data['volume_pre2'] and regression_data['volume'] > regression_data['volume_pre3'])
+           )
        and no_doji_or_spinning_buy_india(regression_data)
        ):
         if(-5 <= regression_data['yearHighChange'] < -1 and regression_data['yearLowChange'] > 30 
-            and -0.5 < regression_data['PCT_day_change'] < 3 and regression_data['forecast_day_PCT2_change'] <= 3
+            and 0 < regression_data['PCT_day_change'] < 2 and regression_data['forecast_day_PCT2_change'] <= 2
             ):
             add_in_csv(regression_data, regressionResult, ws_buyYearHigh, 'buyYearHigh')
             return True
-    if(float(regression_data['forecast_day_VOL_change']) > 30
-       and regression_data['PCT_day_change_pre'] > -0.5
+    if(float(regression_data['forecast_day_VOL_change']) > 50
+       and(regression_data['PCT_day_change_pre'] > 0 
+           or (regression_data['volume'] > regression_data['volume_pre2'] and regression_data['volume'] > regression_data['volume_pre3'])
+           )
        and no_doji_or_spinning_buy_india(regression_data)
        ):
         if(-15 < regression_data['yearHighChange'] < -5 and regression_data['yearLowChange'] > 30
-            and -0.5 < regression_data['PCT_day_change'] < 3 and regression_data['forecast_day_PCT2_change'] <= 3
+            and 0 < regression_data['PCT_day_change'] < 2 and regression_data['forecast_day_PCT2_change'] <= 2
             ):
             add_in_csv(regression_data, regressionResult, ws_buyYearHigh, 'buyYearHigh1')
             return True
@@ -409,7 +413,7 @@ def buy_up_trend(regression_data, regressionResult, ws_buyUpTrend):
            and regression_data['forecast_day_PCT_change'] < regression_data['PCT_day_change'] + .2
            and regression_data['series_trend'] != 'downTrend'
            and regression_data['score'] != '0-1' 
-           and regression_data['forecast_day_PCT7_change'] < 5 and regression_data['forecast_day_PCT10_change'] < 7
+           and regression_data['forecast_day_PCT7_change'] < 0 and regression_data['forecast_day_PCT10_change'] < 0
            ):
             add_in_csv(regression_data, regressionResult, None, 'upTrendCandidate-0')
             return True
@@ -457,7 +461,12 @@ def buy_up_trend(regression_data, regressionResult, ws_buyUpTrend):
 def buy_down_trend(regression_data, regressionResult, ws_buyDownTrend):
     if(all_day_pct_change_negative(regression_data) 
        and 0 < regression_data['PCT_day_change'] < 5 
-       and regression_data['forecast_day_PCT10_change'] < -10
+       and regression_data['forecast_day_PCT10_change'] < -5
+       and (
+           regression_data['forecast_day_PCT5_change'] < -10
+           or regression_data['forecast_day_PCT7_change'] < -10
+           or regression_data['forecast_day_PCT10_change'] < -10
+           )
        and regression_data['yearHighChange'] < -10):
         add_in_csv(regression_data, regressionResult, ws_buyDownTrend, 'buyDownTrend')
         return True
@@ -634,9 +643,11 @@ def buy_oi_candidate(regression_data, regressionResult, ws):
         return True
     if buy_day_low(regression_data, regressionResult, ws):
         return True
-#     if(bar_high != 0):
+#     if(bar > 0 and bar_high != 0):
 #         bar_pct_change = float(((bar-bar_high)/bar_high)*100)
-#         if(bar_pct_change < 0):
+#         if(5 > regression_data['forecast_day_PCT_change'] > 2
+#            and bar_pct_change < 10
+#            ):
 #             return False
     else:
         if(((regression_data['mlpValue'] > 0.3 and regression_data['kNeighboursValue'] > 0.3) or is_algo_buy(regression_data))   
@@ -874,11 +885,13 @@ def sell_year_high(regression_data, regressionResult, ws_sellYearHigh, ws_sellYe
 
 def sell_year_low(regression_data, regressionResult, ws_sellYearLow):
     if(0 < regression_data['yearLowChange'] < 15 and regression_data['yearHighChange'] < -30 
-        and -2 < regression_data['PCT_day_change'] < 0 and regression_data['forecast_day_PCT_change'] < 0
+        and -2 < regression_data['PCT_day_change'] < 0 and -2 < regression_data['forecast_day_PCT_change'] < 0
         and (regression_data['score'] != '1-1' or regression_data['score'] != '10')
         and all_day_pct_change_negative(regression_data) and no_doji_or_spinning_sell_india(regression_data)
-        and float(regression_data['forecast_day_VOL_change']) > 30
-        and regression_data['PCT_day_change_pre'] < 0.5
+        and float(regression_data['forecast_day_VOL_change']) > 50
+        and(regression_data['PCT_day_change_pre'] < 0 
+               or (regression_data['volume'] > regression_data['volume_pre2'] and regression_data['volume'] > regression_data['volume_pre3'])
+            )
         ):
         add_in_csv(regression_data, regressionResult, ws_sellYearLow, 'sellYearLow')
         return True
@@ -887,7 +900,11 @@ def sell_year_low(regression_data, regressionResult, ws_sellYearLow):
 def sell_up_trend(regression_data, regressionResult, ws_sellUpTrend):
     if(all_day_pct_change_positive(regression_data) 
        and -5 < regression_data['PCT_day_change'] < 0 
-       and regression_data['forecast_day_PCT10_change'] > 10
+       and regression_data['forecast_day_PCT10_change'] > 5
+       and (regression_data['forecast_day_PCT5_change'] > 10
+            or regression_data['forecast_day_PCT7_change'] > 10
+            or regression_data['forecast_day_PCT10_change'] > 10
+           )
        and regression_data['yearLowChange'] > 30
        ):
         add_in_csv(regression_data, regressionResult, ws_sellUpTrend, 'sellUpTrend')
@@ -1110,10 +1127,10 @@ def sell_oi_candidate(regression_data, regressionResult, ws):
         return True
     if sell_day_high(regression_data, regressionResult, ws):
         return True
-#     if(bar_low != 0):
+#     if(bar > 0 and bar_low != 0):
 #         bar_pct_change = float(((bar - bar_low)/bar_low)*100)
-#         print(bar_pct_change)
-#         if( bar_pct_change < 0 ):
+#         if( -5 < regression_data['forecast_day_PCT_change'] < -2
+#             and bar_pct_change < 10 ):
 #             return False
     else:
         if(((regression_data['mlpValue'] < -0.3 and regression_data['kNeighboursValue'] < -0.3) or is_algo_sell(regression_data))
